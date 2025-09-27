@@ -4,12 +4,317 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mihomo Config Converter</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
-    <!-- CSS и JavaScript код из артефакта выше -->
-    ...
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            box-sizing: border-box;
+        }
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: #4caf50;
+        }
+        .error {
+            background: rgba(244, 67, 54, 0.2);
+            border-color: #f44336;
+        }
+        pre {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .stat {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+        }
+        .stat-number {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .buttons {
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
 </head>
 <body>
-    <!-- HTML код из артефакта выше -->
-    ...
+    <div class="container">
+        <h1>🚀 Mihomo Converter</h1>
+        
+        <div class="input-group">
+            <label for="config-url">🔗 Ссылка на конфиг:</label>
+            <input type="url" id="config-url" placeholder="Вставьте ссылку на конфиг" 
+                   value="https://connect.stealthsurf.app/to/d819c0dc835c24159c16fa2f">
+        </div>
+        
+        <div class="input-group">
+            <label for="config-text">📝 Или вставьте конфиг текстом:</label>
+            <textarea id="config-text" rows="6" placeholder="vless://... или vmess://... или YAML конфиг"></textarea>
+        </div>
+        
+        <div class="buttons">
+            <button onclick="convertConfig()">🔄 Конвертировать</button>
+            <button onclick="downloadConfig()">💾 Скачать YAML</button>
+            <button onclick="testLink()">🧪 Тест ссылки</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <script>
+        let convertedConfig = '';
+        
+        async function testLink() {
+            const url = document.getElementById('config-url').value.trim();
+            const resultDiv = document.getElementById('result');
+            
+            if (!url) {
+                resultDiv.innerHTML = '<div class="result error">❌ Введите ссылку!</div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<div class="result">🔍 Проверяем ссылку...</div>';
+            
+            try {
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h3>✅ Ссылка работает!</h3>
+                        <p><strong>Статус:</strong> ${response.status} ${response.statusText}</p>
+                        <p><strong>Content-Type:</strong> ${response.headers.get('content-type') || 'unknown'}</p>
+                        <p><strong>Размер:</strong> ${text.length} символов</p>
+                        <p><strong>Первые 200 символов:</strong></p>
+                        <pre style="max-height: 150px;">${text.substring(0, 200)}...</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Ошибка: ${error.message}</div>`;
+            }
+        }
+        
+        async function convertConfig() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="result">⏳ Конвертация...</div>';
+            
+            let configData = '';
+            
+            try {
+                const url = document.getElementById('config-url').value.trim();
+                const text = document.getElementById('config-text').value.trim();
+                
+                if (url) {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    configData = await response.text();
+                } else if (text) {
+                    configData = text;
+                } else {
+                    throw new Error('Введите ссылку или вставьте конфиг');
+                }
+                
+                const config = await convertToMihomo(configData);
+                convertedConfig = jsyaml.dump(config, { indent: 2 });
+                
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h3>✅ Конвертация завершена!</h3>
+                        <div class="stats">
+                            <div class="stat">
+                                <div class="stat-number">${config.proxies.length}</div>
+                                <div>Прокси</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-number">${config['proxy-groups'].length}</div>
+                                <div>Группы</div>
+                            </div>
+                        </div>
+                        <h4>📋 Готовый конфиг:</h4>
+                        <pre>${convertedConfig}</pre>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="result error">❌ Ошибка: ${error.message}</div>`;
+            }
+        }
+        
+        async function convertToMihomo(configData) {
+            const proxies = [];
+            
+            // Парсим разные форматы
+            const lines = configData.split('\n');
+            for (let line of lines) {
+                line = line.trim();
+                if (line.startsWith('vless://')) {
+                    const proxy = parseVlessURL(line);
+                    if (proxy) proxies.push(proxy);
+                }
+            }
+            
+            // Пробуем base64
+            try {
+                const decoded = atob(configData.replace(/\s/g, ''));
+                const decodedLines = decoded.split('\n');
+                for (let line of decodedLines) {
+                    line = line.trim();
+                    if (line.startsWith('vless://')) {
+                        const proxy = parseVlessURL(line);
+                        if (proxy) proxies.push(proxy);
+                    }
+                }
+            } catch (e) {
+                // Не base64
+            }
+            
+            if (proxies.length === 0) {
+                throw new Error('Не найдено прокси серверов');
+            }
+            
+            const proxyNames = proxies.map(p => p.name);
+            
+            return {
+                'mixed-port': 7890,
+                'allow-lan': true,
+                mode: 'rule',
+                'log-level': 'info',
+                'external-controller': '127.0.0.1:9090',
+                dns: {
+                    enable: true,
+                    nameserver: ['8.8.8.8', '1.1.1.1']
+                },
+                proxies: proxies,
+                'proxy-groups': [
+                    {
+                        name: '🚀 Proxy',
+                        type: 'select',
+                        proxies: ['DIRECT', ...proxyNames]
+                    },
+                    {
+                        name: '♻️ Auto',
+                        type: 'url-test',
+                        proxies: proxyNames,
+                        url: 'http://www.gstatic.com/generate_204',
+                        interval: 300
+                    }
+                ],
+                rules: ['MATCH,🚀 Proxy']
+            };
+        }
+        
+        function parseVlessURL(url) {
+            try {
+                const match = url.match(/^vless:\/\/([^@]+)@([^:]+):(\d+)(\?[^#]*)?(#.*)?$/);
+                if (!match) return null;
+                
+                const [, uuid, server, port, paramsStr, nameStr] = match;
+                const name = nameStr ? decodeURIComponent(nameStr.substring(1)) : `${server}:${port}`;
+                
+                return {
+                    name: name,
+                    type: 'vless',
+                    server: server,
+                    port: parseInt(port),
+                    uuid: uuid,
+                    udp: true,
+                    tls: paramsStr && paramsStr.includes('security=tls')
+                };
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        function downloadConfig() {
+            if (!convertedConfig) {
+                alert('Сначала конвертируйте конфиг!');
+                return;
+            }
+            
+            const blob = new Blob([convertedConfig], { type: 'text/yaml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'mihomo-config.yaml';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
 </body>
 </html>
